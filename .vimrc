@@ -59,6 +59,10 @@ set linespace=3 " Line space
 syntax on
 set background=dark
 
+" scroll the viewport faster
+nnoremap <C-e> 3<C-e>
+nnoremap <C-y> 3<C-y>
+
 " Options for morhetz/gruvbox
 let g:gruvbox_bold=0
 let g:gruvbox_italic=0
