@@ -58,6 +58,8 @@ set nostartofline " Keeps the cursor in its last spot when changing buffers (pre
 set linespace=3 " Line space
 syntax on
 set background=dark
+"  remap escape key
+inoremap jk <esc> 
 
 " scroll the viewport faster
 nnoremap <C-e> 3<C-e>
