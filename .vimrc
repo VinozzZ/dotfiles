@@ -8,6 +8,9 @@ endif
 " Setup plugins
 call plug#begin('~/.vim/plugged')
 Plug 'fatih/vim-go', { 'do': ':GoUpdateBinaries' }
+Plug 'junegunn/fzf', { 'do': { -> fzf#install() } }
+Plug 'junegunn/fzf.vim'
+Plug 'majutsushi/tagbar'
 Plug 'ntpeters/vim-better-whitespace'
 Plug 'scrooloose/nerdtree'
 Plug 'Xuyuanp/nerdtree-git-plugin'
@@ -18,6 +21,7 @@ Plug 'jiangmiao/auto-pairs' " auto closing tag
 Plug 'morhetz/gruvbox'
 Plug 'itchyny/lightline.vim'
 Plug 'mileszs/ack.vim'
+Plug 'tpope/vim-sleuth'
 call plug#end()
 
 set updatetime=250 " how long (ms) after you stop typing vim refreshes things, used by vim-gitgutter and other plugins
@@ -63,12 +67,14 @@ let NERDTreeShowHidden=1
 let g:rg_command = 'rg --vimgrep -S'
 
 "
+let g:better_whitespace_enabled=1
+let g:strip_whitespace_on_save=1
+
 " Tab options
 let g:myTabSize = 4 " Set myTabSize var to use below
 let &shiftwidth = myTabSize " Tell vim how many columns is a tab
 let &softtabstop = myTabSize " Tab and delete this many columns
 let &tabstop = myTabSize " Actual hard tabstops will be my tab size
-set expandtab " Make tabs be spaces
 set autoread " Always reload a file when it has changed instead of asking -- only works on gvim
 set autoindent
 set number " Line numbers
@@ -82,20 +88,24 @@ set nowrap " don't wrap text
 set backspace=2 " Backspace works as normal -- actually moves cursor back and deletes
 set tags=tags; " Tell vim to look for tags recursively downwards
 set nostartofline " Keeps the cursor in its last spot when changing buffers (prevents it from going to start of line)
+set autowrite     " Automatically :write before running commands
+" Make it obvious where 80 characters is
+set textwidth=80
+set colorcolumn=+1
 
 """"""""""" View options
 set linespace=3 " Line space
 syntax on
 set background=dark
-set splitright " open all new splits on the right instead of left
 set noshowmode " don't show --INSERT-- in insert mode, rely on status line
 set laststatus=2 " display status line always
 set termguicolors "use native true colors (only supported starting vim v8)
 set clipboard=unnamed,unnamedplus " Always yank to and from the system clipboard
 set cursorline " Show current line highlighted
 set incsearch " show search matches as you type
-
-"  remap escape key
+set noerrorbells "disable beep on errors
+set visualbell "flash screen instead of beeping on errors
+"remap escape key
 inoremap jk <esc>
 "  remap leader key to comma
 let mapleader = ","
@@ -119,6 +129,33 @@ let g:go_fmt_options = {
 \ 'goimports': '-local storj.io/'
 \ }
 let g:go_metalinter_command='golangci-lint --config ~/work/ci/.golangci.yml run --exclude-use-default=false'
+let g:go_rename_command = 'gopls'
+
+autocmd FileType go TagbarOpen
+
+let g:tagbar_type_go = {
+    \ 'kinds' : [
+		\ 'e:embedded',
+		\ 'r:constructor',
+        \ 't:types:0:0',
+        \ 'f:functions:0:0',
+        \ 'm:methods:0:0',
+        \ 'n:intefaces:0:0',
+		\ 'c:constants',
+		\ 'v:variables',
+        \ '?:unknown',
+    \ ],
+	\ 'ctagsbin'  : 'gotags',
+	\ 'ctagsargs' : '-sort -silent',
+	\ 'kind2scope' : {
+		\ 't' : 'ctype',
+		\ 'n' : 'ntype'
+	\ },
+	\ 'scope2kind' : {
+		\ 'ctype' : 't',
+		\ 'ntype' : 'n'
+	\ },
+\ }
 
 " ack.vim --- {{{
 
@@ -127,7 +164,10 @@ let g:go_metalinter_command='golangci-lint --config ~/work/ci/.golangci.yml run 
 " --vimgrep -> Needed to parse the rg response properly for ack.vim
 " --type-not sql -> Avoid huge sql file dumps as it slows down the search
 " --smart-case -> Search case insensitive if all lowercase pattern, Search case sensitively otherwise
+let g:fzf_layout = { 'down':  '30%'}
+let g:fzf_preview_window = 'right:70%:hidden'
 let g:ackprg = 'rg --vimgrep --type-not sql --smart-case'
+let $FZF_DEFAULT_COMMAND = 'rg --files --hidden'
 
 " Auto close the Quickfix list after pressing '<enter>' on a list item
 let g:ack_autoclose = 1
@@ -138,6 +178,9 @@ let g:ack_use_cword_for_empty_search = 1
 " Don't jump to first match
 cnoreabbrev Ack Ack!
 
+" fzf file finder
+nnoremap <silent> <C-f> :Files<CR>
+
 " Maps <leader>/ so we're ready to type the search keyword
 nnoremap <Leader>/ :Ack!<Space>
 " }}}
@@ -145,3 +188,19 @@ nnoremap <Leader>/ :Ack!<Space>
 " Navigate quickfix list with ease
 nnoremap <silent> [q :cprevious<CR>
 nnoremap <silent> ]q :cnext<CR>
+set tags=tags
+
+" Split panes to right and bottom
+set splitbelow
+set splitright
+
+" Triger `autoread` when files changes on disk
+" https://unix.stackexchange.com/questions/149209/refresh-changed-content-of-file-opened-in-vim/383044#383044
+" https://vi.stackexchange.com/questions/13692/prevent-focusgained-autocmd-running-in-command-line-editing-mode
+    autocmd FocusGained,BufEnter,CursorHold,CursorHoldI *
+            \ if mode() !~ '\v(c|r.?|!|t)' && getcmdwintype() == '' | checktime | endif
+
+" Notification after file change
+" https://vi.stackexchange.com/questions/13091/autocmd-event-for-autoread
+autocmd FileChangedShellPost *
+  \ echohl WarningMsg | echo "File changed on disk. Buffer reloaded." | echohl None
