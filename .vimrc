@@ -157,6 +157,11 @@ let g:tagbar_type_go = {
 	\ },
 \ }
 
+" Disable hover tooltips
+set noballooneval
+let g:netrw_nobeval = 1
+let g:ycm_auto_hover=''
+
 " ack.vim --- {{{
 
 " Use ripgrep for searching ⚡️
