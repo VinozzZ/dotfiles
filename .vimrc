@@ -162,6 +162,9 @@ set noballooneval
 let g:netrw_nobeval = 1
 let g:ycm_auto_hover=''
 
+" Toggle definition popup
+nmap <leader>D <plug>(YCMHover)
+
 " ack.vim --- {{{
 
 " Use ripgrep for searching ⚡️
